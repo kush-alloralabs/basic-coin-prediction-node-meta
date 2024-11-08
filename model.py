@@ -162,5 +162,4 @@ def get_inference(token, timeframe, region, data_provider):
     print(X_new.shape)
 
     current_price_pred = loaded_model.predict(X_new)
-
     return current_price_pred[0]

@@ -7,3 +7,6 @@ aiohttp
 multiprocess
 scikit_learn
 python-dotenv
+click
+rich
+plotly

@@ -42,11 +42,11 @@ class AlloraLiquidityManager:
         
         # Calculate basic metrics
         metrics = {
-            "volatility": float(data['Close'].pct_change().std().iloc[0] * np.sqrt(252)),
+            "volatility": float(data['Close'].pct_change().std() * np.sqrt(252)),
             "max_drawdown": self._calculate_max_drawdown(data['Close']),
             "daily_returns": data['Close'].pct_change().dropna().values.tolist()[-30:],  # Last 30 days
-            "current_price": float(data['Close'].iloc[-1].iloc[0]),
-            "price_30d_ago": float(data['Close'].iloc[-31].iloc[0])
+            "current_price": float(data['Close'].iloc[-1]),
+            "price_30d_ago": float(data['Close'].iloc[-31])
         }
         
         return metrics
@@ -55,7 +55,7 @@ class AlloraLiquidityManager:
         """Calculate the maximum drawdown from peak"""
         peak = prices.expanding(min_periods=1).max()
         drawdown = (prices - peak) / peak
-        return float(drawdown.min().iloc[0])
+        return float(drawdown.min())
 
     def get_llm_analysis(self, asset: str, metrics: Dict) -> Dict:
         """Get LLM analysis of historical data and protocol recommendations"""
@@ -200,27 +200,18 @@ class AlloraLiquidityManager:
         # Predictions Comparison Table
         predictions_table = Table(title=f"Price and Volatility Analysis for {asset}")
         predictions_table.add_column("Metric", style="cyan")
-        predictions_table.add_column("Current", style="green")
-        predictions_table.add_column("Predicted (5min)", style="yellow")
-        predictions_table.add_column("Change", style="red")
-        
-        # Calculate price change percentage
-        price_change_pct = ((predictions['predicted_price'] - metrics['current_price']) 
-                           / metrics['current_price'] * 100)
-        volatility_change_pct = ((predictions['predicted_volatility'] - metrics['volatility']) 
-                                / metrics['volatility'] * 100)
+        predictions_table.add_column("Current", style="green", justify="right")
+        predictions_table.add_column("Predicted (5min)", style="yellow", justify="right")
         
         predictions_table.add_row(
             "Price",
             f"${metrics['current_price']:,.2f}",
-            f"${predictions['predicted_price']:,.2f}",
-            f"{price_change_pct:+.2f}%"
+            f"${predictions['predicted_price']:,.2f}"
         )
         predictions_table.add_row(
-            "Volatility",
+            "Volatility (Annual)",
             f"{metrics['volatility']*100:.2f}%",
-            f"{predictions['predicted_volatility']*100:.2f}%",
-            f"{volatility_change_pct:+.2f}%"
+            f"{predictions['predicted_volatility']*100:.2f}%"
         )
         
         console.print(predictions_table)
@@ -229,10 +220,10 @@ class AlloraLiquidityManager:
         # Market Metrics Table
         metrics_table = Table(title=f"Market Analysis for {asset}")
         metrics_table.add_column("Metric", style="cyan")
-        metrics_table.add_column("Value", style="green")
+        metrics_table.add_column("Value", style="green", justify="right")
         
         metrics_table.add_row("Current Price", f"${metrics['current_price']:,.2f}")
-        metrics_table.add_row("30-Day Volatility", f"{metrics['volatility']*100:.2f}%")
+        metrics_table.add_row("Annual Volatility", f"{metrics['volatility']*100:.2f}%")
         metrics_table.add_row("Maximum Drawdown", f"{metrics['max_drawdown']*100:.2f}%")
         
         console.print(metrics_table)
@@ -241,8 +232,8 @@ class AlloraLiquidityManager:
         # Allocations Table
         alloc_table = Table(title="Recommended Allocations")
         alloc_table.add_column("Protocol", style="cyan")
-        alloc_table.add_column("Amount", style="green")
-        alloc_table.add_column("Allocation %", style="yellow")
+        alloc_table.add_column("Amount", style="green", justify="right")
+        alloc_table.add_column("Allocation %", style="yellow", justify="right")
         alloc_table.add_column("Risk Level", style="red")
         
         for protocol, details in allocations.items():
@@ -270,25 +261,6 @@ class AlloraLiquidityManager:
             )
         
         console.print(rationale_table)
-        
-        # Add Detailed Recommendations Table
-        recommendations_table = Table(title="Detailed Protocol Recommendations")
-        recommendations_table.add_column("Protocol", style="cyan")
-        recommendations_table.add_column("Pool Recommendations", style="white", width=40)
-        recommendations_table.add_column("Rebalancing", style="yellow")
-        recommendations_table.add_column("Additional Info", style="green", width=40)
-        
-        for protocol, details in allocations.items():
-            additional_info = details.get('price_range', '') if protocol == 'uniswap' else ''
-            recommendations_table.add_row(
-                protocol.capitalize(),
-                details.get('pool_recommendations', ''),
-                details.get('rebalancing_frequency', ''),
-                additional_info
-            )
-        
-        console.print(recommendations_table)
-        console.print()
         
         # Market Outlook
         if "market_outlook" in allocations:

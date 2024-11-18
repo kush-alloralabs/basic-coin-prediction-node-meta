@@ -23,7 +23,7 @@ This will:
 To get AI-powered liquidity management recommendations:
 
 ```bash
-python liquidity_manager.py --asset ETH --amount 1000
+python liquidity_manager.py --asset [ETH, BTC, SOL, BNB, ARB] --amount [amount in chosen currency]
 ```
 
 This will:
